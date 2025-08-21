@@ -1,0 +1,25 @@
+{
+  "name": "trading-artificial",
+  "version": "1.0.0",
+  "description": "Monorepo para análisis de mercados financieros con líneas de tendencia",
+  "private": true,
+  "scripts": {
+    "dev-up": "docker compose -f infra/docker-compose.dev.yml up --build",
+    "dev-down": "docker compose -f infra/docker-compose.dev.yml down -v",
+    "dev-logs": "docker compose -f infra/docker-compose.dev.yml logs -f",
+    "clean": "docker compose -f infra/docker-compose.dev.yml down -v --remove-orphans && docker system prune -f"
+  },
+  "keywords": [
+    "trading",
+    "artificial-intelligence",
+    "technical-analysis",
+    "trend-lines",
+    "financial-markets"
+  ],
+  "author": "Trading Artificial Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}

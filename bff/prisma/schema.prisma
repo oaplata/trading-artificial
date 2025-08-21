@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelos básicos para futuras implementaciones
+model TrendLine {
+  id        String   @id @default(cuid())
+  symbol    String
+  type      String   // 'support' | 'resistance'
+  price     Float
+  confidence Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("trend_lines")
+}
+
+model MarketData {
+  id        String   @id @default(cuid())
+  symbol    String
+  price     Float
+  volume    Float
+  timestamp DateTime
+  createdAt DateTime @default(now())
+
+  @@map("market_data")
+}

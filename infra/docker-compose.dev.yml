@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  ta-db:
+    image: postgres:16
+    container_name: ta-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: trenddb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ta_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d trenddb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ta-network
+
+  ta-ml:
+    build:
+      context: ../ml-service
+      dockerfile: Dockerfile
+    container_name: ta-ml
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      ta-db:
+        condition: service_healthy
+    networks:
+      - ta-network
+
+  ta-bff:
+    build:
+      context: ../bff
+      dockerfile: Dockerfile
+    container_name: ta-bff
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@ta-db:5432/trenddb?schema=public
+      - ML_SERVICE_URL=http://ta-ml:8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      ta-db:
+        condition: service_healthy
+      ta-ml:
+        condition: service_healthy
+    networks:
+      - ta-network
+
+  ta-frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ta-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BFF_URL=http://localhost:3000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      ta-bff:
+        condition: service_healthy
+    networks:
+      - ta-network
+
+volumes:
+  ta_postgres_data:
+
+networks:
+  ta-network:
+    driver: bridge
