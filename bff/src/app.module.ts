@@ -6,6 +6,7 @@ import { DataModule } from './data/data.module';
 import { LinesModule } from './lines/lines.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { MlProxyModule } from './ml-proxy/ml-proxy.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { MlProxyModule } from './ml-proxy/ml-proxy.module';
       envFilePath: '.env',
     }),
     TerminusModule,
+    PrismaModule,
     HealthModule,
     DataModule,
     LinesModule,
