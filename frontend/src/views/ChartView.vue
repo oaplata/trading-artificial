@@ -73,11 +73,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createChart, type Chart, type LineSeries, type LineData } from 'lightweight-charts'
+import { createChart, type IChartApi, type ISeriesApi, type LineData } from 'lightweight-charts'
 
 const chartContainer = ref<HTMLDivElement>()
-const chart = ref<Chart>()
-const lineSeries = ref<LineSeries>()
+const chart = ref<IChartApi>()
+const lineSeries = ref<ISeriesApi<'Line'>>()
 const loading = ref(true)
 
 const generateMockData = (): LineData[] => {
@@ -89,7 +89,7 @@ const generateMockData = (): LineData[] => {
     const time = now - (100 - i) * 24 * 60 * 60 // Últimos 100 días
     price += (Math.random() - 0.5) * 1000 // Variación aleatoria
     data.push({
-      time,
+      time: time as any, // Type assertion para evitar error de tipo
       value: Math.max(price, 35000) // Precio mínimo
     })
   }
