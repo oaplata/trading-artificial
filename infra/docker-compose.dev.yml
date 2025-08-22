@@ -45,6 +45,10 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@ta-db:5432/trenddb?schema=public
       - ML_SERVICE_URL=http://ta-ml:8000
+    volumes:
+      - ../bff:/app
+      - /app/node_modules
+      - ../bff/node_modules:/app/node_modules
     depends_on:
       - ta-db
       - ta-ml
@@ -65,8 +69,26 @@ services:
     networks:
       - ta-network
 
+  ta-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ta-pgadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@trading-artificial.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin-servers.json:/pgadmin4/servers.json
+    depends_on:
+      - ta-db
+    networks:
+      - ta-network
+
 volumes:
   ta_postgres_data:
+  pgadmin_data:
 
 networks:
   ta-network:

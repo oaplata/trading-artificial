@@ -22,3 +22,15 @@ status: ## Mostrar estado de los servicios
 
 restart: ## Reiniciar todos los servicios
 	docker compose -f infra/docker-compose.dev.yml restart
+
+pgadmin: ## Abrir pgAdmin en el navegador
+	@echo "🚀 Abriendo pgAdmin..."
+	@echo "📊 URL: http://localhost:8080"
+	@echo "👤 Email: admin@trading-artificial.com"
+	@echo "🔑 Password: admin123"
+	@if command -v open &> /dev/null; then open "http://localhost:8080"; \
+	elif command -v xdg-open &> /dev/null; then xdg-open "http://localhost:8080"; \
+	else echo "🌐 Abre manualmente: http://localhost:8080"; fi
+
+db-connect: ## Conectar a la base de datos PostgreSQL
+	docker compose -f infra/docker-compose.dev.yml exec ta-db psql -U postgres -d trenddb

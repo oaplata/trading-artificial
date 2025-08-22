@@ -1,4 +1,11 @@
 import { Module } from '@nestjs/common';
+import { DataController } from './data.controller';
+import { DataService } from './data.service';
+import { PrismaService } from '../prisma/prisma.service';
 
-@Module({})
+@Module({
+  controllers: [DataController],
+  providers: [DataService, PrismaService],
+  exports: [DataService],
+})
 export class DataModule {}
