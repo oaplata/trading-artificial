@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// bff/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,26 +8,135 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modelos básicos para futuras implementaciones
-model TrendLine {
-  id        String   @id @default(cuid())
-  symbol    String
-  type      String   // 'support' | 'resistance'
-  price     Float
-  confidence Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("trend_lines")
+enum Timeframe {
+  D1
+  H4
+  H1
+  M15
+  M5
 }
 
-model MarketData {
-  id        String   @id @default(cuid())
-  symbol    String
-  price     Float
-  volume    Float
-  timestamp DateTime
-  createdAt DateTime @default(now())
+enum PivotType {
+  HIGH
+  LOW
+}
 
-  @@map("market_data")
+enum LineType {
+  SUPPORT
+  RESIST
+  CHANNEL
+}
+
+enum FeedbackLabel {
+  GOOD
+  BAD
+}
+
+model Dataset {
+  id          String     @id @default(cuid())
+  symbol      String
+  timeframe   Timeframe
+  sourceFile  String?
+  rows        Int        @default(0)
+  uploadedAt  DateTime   @default(now())
+
+  // Relaciones
+  candles       Candle[]
+  pivots        Pivot[]
+  lineCandidates LineCandidate[]
+
+  @@unique([symbol, timeframe])
+  @@index([symbol, timeframe])
+}
+
+model Candle {
+  id        String   @id @default(cuid())
+  datasetId String
+  dataset   Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  // time en UTC (timestamptz) y un índice incremental por dataset
+  time      DateTime @db.Timestamptz(6)
+  tIdx      Int
+
+  open      Decimal  @db.Decimal(20, 8)
+  high      Decimal  @db.Decimal(20, 8)
+  low       Decimal  @db.Decimal(20, 8)
+  close     Decimal  @db.Decimal(20, 8)
+
+  @@unique([datasetId, time])
+  @@index([datasetId, tIdx])
+  @@index([datasetId, time])
+}
+
+model Pivot {
+  id        String    @id @default(cuid())
+  datasetId String
+  dataset   Dataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  tIdx      Int
+  price     Decimal  @db.Decimal(20, 8)
+  type      PivotType
+  scale     Float     // k de ATR o escala relativa
+
+  @@index([datasetId, tIdx])
+  @@index([datasetId, type])
+}
+
+model LineCandidate {
+  id        String    @id @default(cuid())
+  datasetId String
+  dataset   Dataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  type      LineType
+  // y = m*x + b  sobre el eje x = tIdx
+  m         Float
+  b         Float
+  tStart    Int
+  tEnd      Int
+
+  features  Json      // touch_count, span, r2, side_purity, false_breaks, cleanliness, recency_weight, etc.
+
+  scores    LineScore[]
+  feedbacks Feedback[]
+
+  @@index([datasetId, type])
+  @@index([datasetId, tStart, tEnd])
+}
+
+model LineScore {
+  id           String        @id @default(cuid())
+  candidateId  String
+  candidate    LineCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  modelVersion String
+  score        Float
+  createdAt    DateTime      @default(now())
+
+  @@index([candidateId, modelVersion])
+  @@index([createdAt])
+}
+
+model Feedback {
+  id           String        @id @default(cuid())
+  candidateId  String
+  candidate    LineCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  label        FeedbackLabel
+  // Ajuste manual opcional de la línea
+  adjustedM    Float?
+  adjustedB    Float?
+
+  userId       String?       // sin FK por ahora
+  createdAt    DateTime      @default(now())
+
+  @@index([candidateId])
+  @@index([createdAt])
+}
+
+model ModelVersion {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  params     Json?
+  trainRange String?
+  createdAt  DateTime @default(now())
 }

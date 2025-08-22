@@ -87,7 +87,7 @@ async def get_candidates():
         ),
     ]
 
-@app.get("/score/{symbol}")
+@app.get("/score/{symbol:path}")
 async def get_score(symbol: str):
     """
     Endpoint stub para obtener score de un símbolo específico

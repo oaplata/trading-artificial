@@ -2,8 +2,11 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+# Instalar dependencias del sistema necesarias para Prisma
+RUN apk add --no-cache openssl
+
 # Instalar dependencias
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
 # Copiar código fuente

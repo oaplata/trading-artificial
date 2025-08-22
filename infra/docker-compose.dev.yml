@@ -30,15 +30,8 @@ services:
       - "8000:8000"
     environment:
       - PYTHONPATH=/app
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     depends_on:
-      ta-db:
-        condition: service_healthy
+      - ta-db
     networks:
       - ta-network
 
@@ -52,17 +45,9 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@ta-db:5432/trenddb?schema=public
       - ML_SERVICE_URL=http://ta-ml:8000
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     depends_on:
-      ta-db:
-        condition: service_healthy
-      ta-ml:
-        condition: service_healthy
+      - ta-db
+      - ta-ml
     networks:
       - ta-network
 
@@ -75,15 +60,8 @@ services:
       - "5173:5173"
     environment:
       - VITE_BFF_URL=http://localhost:3000
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5173"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     depends_on:
-      ta-bff:
-        condition: service_healthy
+      - ta-bff
     networks:
       - ta-network
 

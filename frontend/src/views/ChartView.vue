@@ -56,7 +56,7 @@
           <div class="flex justify-between">
             <span class="text-gray-600">Cambio 24h</span>
             <span class="font-medium text-green-600">+2.45%</span>
-          </div>
+            </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Volumen 24h</span>
             <span class="font-medium">$1.2B</span>
@@ -73,11 +73,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createChart, IChartApi, ISeriesApi, LineData } from 'lightweight-charts'
+import { createChart, type Chart, type LineSeries, type LineData } from 'lightweight-charts'
 
 const chartContainer = ref<HTMLDivElement>()
-const chart = ref<IChartApi>()
-const lineSeries = ref<ISeriesApi<'Line'>>()
+const chart = ref<Chart>()
+const lineSeries = ref<LineSeries>()
 const loading = ref(true)
 
 const generateMockData = (): LineData[] => {
