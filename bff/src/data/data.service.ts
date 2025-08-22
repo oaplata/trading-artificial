@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadCsvResponseDto } from './dto/upload-csv.dto';
+import { ListDatasetsDto, ListDatasetsResponseDto } from './dto/list-datasets.dto';
+import { GetCandlesDto, GetCandlesResponseDto } from './dto/get-candles.dto';
 import { Timeframe } from '../lines/dto/get-top-lines.dto';
 import * as fastCsv from 'fast-csv';
 import { Readable } from 'stream';
@@ -249,5 +251,104 @@ export class DataService {
     return Array.from(seen.values()).sort(
       (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime(),
     );
+  }
+
+  async listDatasets(query: ListDatasetsDto): Promise<ListDatasetsResponseDto> {
+    const { page = 1, pageSize = 20, symbol, timeframe, order = 'uploadedAt_desc' } = query;
+    const skip = (page - 1) * pageSize;
+
+    // Construir where clause
+    const where: any = {};
+    if (symbol) where.symbol = { contains: symbol, mode: 'insensitive' };
+    if (timeframe) where.timeframe = timeframe;
+
+    // Construir orderBy
+    const orderBy: any = {};
+    if (order === 'uploadedAt_desc') orderBy.uploadedAt = 'desc';
+    else if (order === 'uploadedAt_asc') orderBy.uploadedAt = 'asc';
+
+    // Obtener datasets
+    const [datasets, total] = await Promise.all([
+      this.prisma.dataset.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy,
+        select: {
+          id: true,
+          symbol: true,
+          timeframe: true,
+          rows: true,
+          uploadedAt: true,
+        },
+      }),
+      this.prisma.dataset.count({ where }),
+    ]);
+
+    return {
+              items: datasets.map(dataset => ({
+          ...dataset,
+          timeframe: dataset.timeframe as Timeframe,
+          uploadedAt: dataset.uploadedAt.toISOString(),
+        })),
+      page,
+      pageSize,
+      total,
+    };
+  }
+
+  async getCandlesByDataset(datasetId: string, query: GetCandlesDto): Promise<GetCandlesResponseDto> {
+    const { fromTime, toTime, limit = 100000 } = query;
+
+    // Obtener dataset
+    const dataset = await this.prisma.dataset.findUnique({
+      where: { id: datasetId },
+      select: {
+        id: true,
+        symbol: true,
+        timeframe: true,
+        rows: true,
+        uploadedAt: true,
+      },
+    });
+
+    if (!dataset) {
+      throw new Error('Dataset no encontrado');
+    }
+
+    // Construir where clause para velas
+    const where: any = { datasetId };
+    if (fromTime) where.time = { gte: new Date(fromTime) };
+    if (toTime) where.time = { lte: new Date(toTime) };
+
+    // Obtener velas
+    const candles = await this.prisma.candle.findMany({
+      where,
+      orderBy: { time: 'asc' },
+      take: limit,
+      select: {
+        time: true,
+        open: true,
+        high: true,
+        low: true,
+        close: true,
+        tIdx: true,
+      },
+    });
+
+    return {
+      dataset: {
+        ...dataset,
+        uploadedAt: dataset.uploadedAt.toISOString(),
+      },
+      candles: candles.map(candle => ({
+        ...candle,
+        time: candle.time.getTime(), // Convertir a epoch ms
+        open: parseFloat(candle.open.toString()),
+        high: parseFloat(candle.high.toString()),
+        low: parseFloat(candle.low.toString()),
+        close: parseFloat(candle.close.toString()),
+      })),
+    };
   }
 }

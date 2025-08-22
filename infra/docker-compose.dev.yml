@@ -48,7 +48,6 @@ services:
     volumes:
       - ../bff:/app
       - /app/node_modules
-      - ../bff/node_modules:/app/node_modules
     depends_on:
       - ta-db
       - ta-ml

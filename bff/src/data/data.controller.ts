@@ -5,12 +5,15 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  Param,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DataService } from './data.service';
 import { UploadCsvDto, UploadCsvResponseDto } from './dto/upload-csv.dto';
+import { ListDatasetsDto, ListDatasetsResponseDto } from './dto/list-datasets.dto';
+import { GetCandlesDto, GetCandlesResponseDto } from './dto/get-candles.dto';
 
 @Controller('data')
 export class DataController {
@@ -49,5 +52,18 @@ export class DataController {
     }
 
     return this.dataService.uploadCsv(file, query.symbol, query.timeframe);
+  }
+
+  @Get('datasets')
+  async listDatasets(@Query() query: ListDatasetsDto): Promise<ListDatasetsResponseDto> {
+    return this.dataService.listDatasets(query);
+  }
+
+  @Get('datasets/:id/candles')
+  async getCandlesByDataset(
+    @Param('id') id: string,
+    @Query() query: GetCandlesDto,
+  ): Promise<GetCandlesResponseDto> {
+    return this.dataService.getCandlesByDataset(id, query);
   }
 }
